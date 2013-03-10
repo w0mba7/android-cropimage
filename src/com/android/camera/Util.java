@@ -44,6 +44,8 @@ import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
+import java.lang.reflect.Field;
+
 /**
  * Collection of utility functions used in this package.
  */
@@ -431,8 +433,20 @@ public class Util {
 
     // Returns Options that set the puregeable flag for Bitmap decode.
     public static BitmapFactory.Options createNativeAllocOptions() {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inNativeAlloc = true;
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        final Class<?> clazz = options.getClass();
+
+        try {
+            final Field inNativeAlloc = clazz.getDeclaredField("inNativeAlloc");
+
+            inNativeAlloc.setAccessible(true);
+            inNativeAlloc.setBoolean(options, Boolean.TRUE);
+        } catch (final SecurityException e) {
+        } catch (final NoSuchFieldException e) {
+        } catch (final IllegalArgumentException e) {
+        } catch (final IllegalAccessException e) {
+        }
+
         return options;
     }
 }
