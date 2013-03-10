@@ -559,6 +559,7 @@ class CropImageView extends ImageViewTouchBase {
     HighlightView mMotionHighlightView = null;
     float mLastX, mLastY;
     int mMotionEdge;
+    Context mContext;
 
     @Override
     protected void onLayout(boolean changed, int left, int top,
@@ -577,6 +578,8 @@ class CropImageView extends ImageViewTouchBase {
 
     public CropImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        mContext = context;
     }
 
     @Override
