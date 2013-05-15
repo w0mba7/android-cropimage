@@ -16,13 +16,12 @@
 
 package com.android.camera;
 
-import com.android.gallery.R;
+import java.io.Closeable;
+import java.io.FileDescriptor;
+import java.io.IOException;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -35,14 +34,8 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.animation.Animation;
-import android.view.animation.TranslateAnimation;
 
 import com.android.camera.gallery.IImage;
-
-import java.io.Closeable;
-import java.io.FileDescriptor;
-import java.io.IOException;
 
 /**
  * Collection of utility functions used in this package.
@@ -361,25 +354,25 @@ public class Util {
     }
 
     private static class BackgroundJob
-            extends MonitoredActivity.LifeCycleAdapter implements Runnable {
+            extends MonitoredContext.LifeCycleAdapter implements Runnable {
 
-        private final MonitoredActivity mActivity;
+        private final MonitoredContext mContext;
         private final ProgressDialog mDialog;
         private final Runnable mJob;
         private final Handler mHandler;
         private final Runnable mCleanupRunner = new Runnable() {
             public void run() {
-                mActivity.removeLifeCycleListener(BackgroundJob.this);
+                mContext.removeLifeCycleListener(BackgroundJob.this);
                 if (mDialog.getWindow() != null) mDialog.dismiss();
             }
         };
 
-        public BackgroundJob(MonitoredActivity activity, Runnable job,
+        public BackgroundJob(MonitoredContext activity, Runnable job,
                 ProgressDialog dialog, Handler handler) {
-            mActivity = activity;
+            mContext = activity;
             mDialog = dialog;
             mJob = job;
-            mActivity.addLifeCycleListener(this);
+            mContext.addLifeCycleListener(this);
             mHandler = handler;
         }
 
@@ -393,7 +386,7 @@ public class Util {
 
 
         @Override
-        public void onActivityDestroyed(MonitoredActivity activity) {
+        public void onActivityDestroyed(MonitoredContext activity) {
             // We get here only when the onDestroyed being called before
             // the mCleanupRunner. So, run it now and remove it from the queue
             mCleanupRunner.run();
@@ -401,22 +394,22 @@ public class Util {
         }
 
         @Override
-        public void onActivityStopped(MonitoredActivity activity) {
+        public void onActivityStopped(MonitoredContext activity) {
             mDialog.hide();
         }
 
         @Override
-        public void onActivityStarted(MonitoredActivity activity) {
+        public void onActivityStarted(MonitoredContext activity) {
             mDialog.show();
         }
     }
 
-    public static void startBackgroundJob(MonitoredActivity activity,
+    public static void startBackgroundJob(MonitoredContext activity,
             String title, String message, Runnable job, Handler handler) {
         // Make the progress dialog uncancelable, so that we can gurantee
         // the thread will be done before the activity getting destroyed.
         ProgressDialog dialog = ProgressDialog.show(
-                activity, title, message, true, false);
+                activity.getContext(), title, message, true, false);
         new Thread(new BackgroundJob(activity, job, dialog, handler)).start();
     }
 
@@ -432,7 +425,7 @@ public class Util {
     // Returns Options that set the puregeable flag for Bitmap decode.
     public static BitmapFactory.Options createNativeAllocOptions() {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inNativeAlloc = true;
+//        options.inNativeAlloc = true;
         return options;
     }
 }
