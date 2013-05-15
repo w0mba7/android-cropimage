@@ -16,8 +16,7 @@
 
 package com.android.camera;
 
-import static android.app.Activity.RESULT_CANCELED;
-import static android.app.Activity.RESULT_OK;
+import static android.provider.MediaStore.EXTRA_OUTPUT;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,13 +56,11 @@ import com.android.gallery.R;
  * The activity can crop specific region of interest from an image.
  */
 public class CropImageFragment extends MonitoredFragment implements CropContext {
+	
 	private static final String TAG = "CropImage";
 
 	// These are various options can be specified in the intent.
-	private Bitmap.CompressFormat mOutputFormat = Bitmap.CompressFormat.JPEG; // only
-																				// used
-																				// with
-																				// mSaveUri
+	private Bitmap.CompressFormat mOutputFormat = Bitmap.CompressFormat.JPEG;
 	private Uri mSaveUri = null;
 	private boolean mSetWallpaper = false;
 	private int mAspectX, mAspectY;
@@ -77,17 +74,50 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 	private boolean mScale;
 	private boolean mScaleUp = true;
 
-	boolean mWaitingToPick; // Whether we are wait the user to pick a face.
-	boolean mSaving; // Whether the "save" button is already clicked.
+	private boolean mWaitingToPick; // Whether we are wait the user to pick a face.
+	private boolean mSaving; // Whether the "save" button is already clicked.
 
 	private CropImageView mImageView;
 	private ContentResolver mContentResolver;
 
 	private Bitmap mBitmap;
-	HighlightView mCrop;
+	private HighlightView mCrop;
 
 	private IImageList mAllImages;
 	private IImage mImage;
+	
+	private final OnCropListener defaultCropListener = new DefaultOnCropListener();
+	
+	
+	private OnCropListener onCropListener = defaultCropListener;
+	
+	public interface OnCropListener {
+		public void onCropFinished(Bundle results);
+		public void onCropCancelled();
+	}
+	
+	private class DefaultOnCropListener implements OnCropListener {
+
+		@Override
+		public void onCropFinished(Bundle results) {
+			// TODO
+		}
+
+		@Override
+		public void onCropCancelled() {
+			if (isVisible()) {
+				getChildFragmentManager().popBackStack();
+			}
+		}
+		
+	}
+	
+	public void setOnCropListener(OnCropListener onCropListener) {
+		if (onCropListener == null) {
+			onCropListener = defaultCropListener;
+		}
+		this.onCropListener = onCropListener;
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -99,7 +129,7 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 				new View.OnClickListener() {
 					public void onClick(View v) {
 						getActivity().setResult(Activity.RESULT_CANCELED);
-						finish();
+						onCropListener.onCropCancelled();
 					}
 				});
 		result.findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
@@ -109,15 +139,10 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 		});
 		return result;
 	}
-
+	
 	@Override
-	public void onCreate(Bundle icicle) {
-		super.onCreate(icicle);
-		mContentResolver = getActivity().getContentResolver();
-
-		Intent intent = getActivity().getIntent();
-		Bundle extras = intent.getExtras();
-
+	public void setArguments(Bundle extras) {
+		super.setArguments(extras);
 		if (extras != null) {
 			if (extras.getString("circleCrop") != null) {
 				mCircleCrop = true;
@@ -126,27 +151,26 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			}
 			mSaveUri = (Uri) extras.getParcelable(MediaStore.EXTRA_OUTPUT);
 			if (mSaveUri != null) {
-				String outputFormatString = extras.getString("outputFormat");
+				String outputFormatString = extras.getString(CropContext.EXTRA_OUTPUT_FORMAT);
 				if (outputFormatString != null) {
 					mOutputFormat = Bitmap.CompressFormat
 							.valueOf(outputFormatString);
 				}
 			} else {
-				mSetWallpaper = extras.getBoolean("setWallpaper");
+				mSetWallpaper = extras.getBoolean(CropContext.EXTRA_SET_WALLPAPER);
 			}
-			mBitmap = (Bitmap) extras.getParcelable("data");
-			mAspectX = extras.getInt("aspectX");
-			mAspectY = extras.getInt("aspectY");
-			mOutputX = extras.getInt("outputX");
-			mOutputY = extras.getInt("outputY");
-			mScale = extras.getBoolean("scale", true);
-			mScaleUp = extras.getBoolean("scaleUpIfNeeded", true);
-			mDoFaceDetection = extras.containsKey("noFaceDetection") ? !extras
-					.getBoolean("noFaceDetection") : true;
+			mBitmap = (Bitmap) extras.getParcelable(EXTRA_BITMAP_DATA);
+			mAspectX = extras.getInt(EXTRA_ASPECT_X);
+			mAspectY = extras.getInt(EXTRA_ASPECT_Y);
+			mOutputX = extras.getInt(EXTRA_OUTPUT_X);
+			mOutputY = extras.getInt(EXTRA_OUTPUT_Y);
+			mScale = extras.getBoolean(EXTRA_SCALE, true);
+			mScaleUp = extras.getBoolean(EXTRA_SCALE_UP_IF_NEEDED, true);
+			mDoFaceDetection = extras.getBoolean(EXTRA_NO_FACE_DETECTION, true);
 		}
-
+		
 		if (mBitmap == null) {
-			Uri target = intent.getData();
+			Uri target = extras.getParcelable(EXTRA_OUTPUT);
 			mAllImages = ImageManager.makeImageList(mContentResolver, target,
 					ImageManager.SORT_ASCENDING);
 			mImage = mAllImages.getImageForUri(target);
@@ -160,19 +184,18 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 		}
 
 		if (mBitmap == null) {
-			finish();
-			return;
+			onCropListener.onCropCancelled();
+		} else {
+			startFaceDetection();
 		}
-
-		startFaceDetection();
 	}
 	
-	private void finish() {
-		if (isVisible()) {
-			getChildFragmentManager().popBackStack();
-		}
+	@Override
+	public void onCreate(Bundle icicle) {
+		super.onCreate(icicle);
+		mContentResolver = getActivity().getContentResolver();
 	}
-
+	
 	private void startFaceDetection() {
 		if (getActivity().isFinishing()) {
 			return;
@@ -303,10 +326,8 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 				&& (myExtras.getParcelable("data") != null || myExtras
 						.getBoolean("return-data"))) {
 			Bundle extras = new Bundle();
-			extras.putParcelable("data", croppedImage);
-			getActivity().setResult(RESULT_OK, (new Intent()).setAction("inline-data")
-					.putExtras(extras));
-			finish();
+			extras.putParcelable(EXTRA_BITMAP_DATA, croppedImage);
+			onCropListener.onCropFinished(extras);
 		} else {
 			final Bitmap b = croppedImage;
 			final int msdId = mSetWallpaper ? R.string.wallpaper
@@ -339,15 +360,14 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 				Util.closeSilently(outputStream);
 			}
 			Bundle extras = new Bundle();
-			setResult(RESULT_OK,
-					new Intent(mSaveUri.toString()).putExtras(extras));
+			onCropListener.onCropFinished(extras);
 		} else if (mSetWallpaper) {
 			try {
 				WallpaperManager.getInstance(getActivity()).setBitmap(croppedImage);
-				setResult(RESULT_OK);
+				onCropListener.onCropFinished(new Bundle());
 			} catch (IOException e) {
 				Log.e(TAG, "Failed to set wallpaper.", e);
-				setResult(RESULT_CANCELED);
+				onCropListener.onCropCancelled();
 			}
 		} else {
 			Bundle extras = new Bundle();
@@ -381,9 +401,8 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 								// the location (gps).
 						directory.toString(), fileName + "-" + x + ".jpg",
 						croppedImage, null, degree);
-
-				setResult(RESULT_OK, new Intent().setAction(newUri.toString())
-						.putExtras(extras));
+				extras.putParcelable(EXTRA_OUTPUT, newUri);
+				onCropListener.onCropFinished(extras);
 			} catch (Exception ex) {
 				// basically ignore this or put up
 				// some ui saying we failed
@@ -398,16 +417,6 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 				b.recycle();
 			}
 		});
-
-		finish();
-	}
-
-	private void setResult(int resultCode) {
-		getActivity().setResult(resultCode);
-	}
-
-	private void setResult(int resultCode, Intent putExtras) {
-		getActivity().setResult(resultCode, putExtras);
 	}
 
 	@Override
