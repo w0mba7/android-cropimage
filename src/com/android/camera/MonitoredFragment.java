@@ -34,36 +34,53 @@ public abstract class MonitoredFragment extends Fragment implements MonitoredCon
     public void removeLifeCycleListener(LifeCycleListener listener) {
         mListeners.remove(listener);
     }
+    
+    protected void dispatchOnCreate() {
+    	for (LifeCycleListener listener : mListeners) {
+    		listener.onActivityCreated(this);
+    	}
+    }
+    
+    protected void dispatchOnDestroy() {
+    	for (LifeCycleListener listener : mListeners) {
+    		listener.onActivityDestroyed(this);
+    	}
+    }
+    
+    protected void dispatchOnStart() {
+        for (LifeCycleListener listener : mListeners) {
+            listener.onActivityStarted(this);
+        }
+    }
+    
+    protected void dispatchOnStop() {
+        for (LifeCycleListener listener : mListeners) {
+            listener.onActivityStopped(this);
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        for (LifeCycleListener listener : mListeners) {
-            listener.onActivityCreated(this);
-        }
+        dispatchOnCreate();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        for (LifeCycleListener listener : mListeners) {
-            listener.onActivityDestroyed(this);
-        }
+        dispatchOnDestroy();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        for (LifeCycleListener listener : mListeners) {
-            listener.onActivityStarted(this);
-        }
+        dispatchOnStart();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        for (LifeCycleListener listener : mListeners) {
-            listener.onActivityStopped(this);
-        }
+        dispatchOnStop();
     }
+    
 }
