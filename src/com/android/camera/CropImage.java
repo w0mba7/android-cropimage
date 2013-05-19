@@ -103,7 +103,7 @@ public class CropImage extends MonitoredActivity implements CropContext {
             }
             mSaveUri = (Uri) extras.getParcelable(MediaStore.EXTRA_OUTPUT);
             if (mSaveUri != null) {
-                String outputFormatString = extras.getString("outputFormat");
+                String outputFormatString = extras.getString(EXTRA_OUTPUT_FORMAT);
                 if (outputFormatString != null) {
                     mOutputFormat = Bitmap.CompressFormat.valueOf(
                             outputFormatString);
@@ -111,16 +111,14 @@ public class CropImage extends MonitoredActivity implements CropContext {
             } else {
                 mSetWallpaper = extras.getBoolean("setWallpaper");
             }
-            mBitmap = (Bitmap) extras.getParcelable("data");
-            mAspectX = extras.getInt("aspectX");
-            mAspectY = extras.getInt("aspectY");
-            mOutputX = extras.getInt("outputX");
-            mOutputY = extras.getInt("outputY");
-            mScale = extras.getBoolean("scale", true);
-            mScaleUp = extras.getBoolean("scaleUpIfNeeded", true);
-            mDoFaceDetection = extras.containsKey("noFaceDetection")
-                    ? !extras.getBoolean("noFaceDetection")
-                    : true;
+            mBitmap = (Bitmap) extras.getParcelable(EXTRA_BITMAP_DATA);
+            mAspectX = extras.getInt(EXTRA_ASPECT_X);
+            mAspectY = extras.getInt(EXTRA_ASPECT_Y);
+            mOutputX = extras.getInt(EXTRA_OUTPUT_X);
+            mOutputY = extras.getInt(EXTRA_OUTPUT_Y);
+            mScale = extras.getBoolean(EXTRA_SCALE, true);
+            mScaleUp = extras.getBoolean(EXTRA_SCALE_UP_IF_NEEDED, true);
+            mDoFaceDetection = extras.getBoolean(EXTRA_NO_FACE_DETECTION, true);
         }
 
         if (mBitmap == null) {
