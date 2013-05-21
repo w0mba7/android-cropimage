@@ -28,6 +28,7 @@ public interface CropContext extends MonitoredContext {
 	public static final String EXTRA_SET_WALLPAPER = "setWallpaper";
 	public static final String EXTRA_OUTPUT_FORMAT = "outputFormat";
 	public static final String EXTRA_SOURCE = "source";
+	public static final String EXTRA_DISABLE_DISCARD = "disableDiscard";
 
 	public abstract boolean isWaitingToPick();
 

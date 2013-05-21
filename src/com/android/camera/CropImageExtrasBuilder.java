@@ -19,12 +19,14 @@ import static android.provider.MediaStore.EXTRA_OUTPUT;
 import static com.android.camera.CropContext.EXTRA_ASPECT_X;
 import static com.android.camera.CropContext.EXTRA_ASPECT_Y;
 import static com.android.camera.CropContext.EXTRA_BITMAP_DATA;
+import static com.android.camera.CropContext.EXTRA_DISABLE_DISCARD;
 import static com.android.camera.CropContext.EXTRA_NO_FACE_DETECTION;
 import static com.android.camera.CropContext.EXTRA_OUTPUT_X;
 import static com.android.camera.CropContext.EXTRA_OUTPUT_Y;
 import static com.android.camera.CropContext.EXTRA_SCALE;
 import static com.android.camera.CropContext.EXTRA_SCALE_UP_IF_NEEDED;
 import static com.android.camera.CropContext.EXTRA_SOURCE;
+import android.app.ActionBar;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,8 +39,8 @@ import android.os.Bundle;
  * 
  * @param <SELF>
  */
-//TODO: Circle Crop
-//TODO: Set Wallpaper
+// TODO: Circle Crop
+// TODO: Set Wallpaper
 public class CropImageExtrasBuilder<SELF extends CropImageExtrasBuilder<SELF>> {
 
 	private static final int DEFAULT_SCALE = 1;
@@ -46,6 +48,7 @@ public class CropImageExtrasBuilder<SELF extends CropImageExtrasBuilder<SELF>> {
 	private boolean scale = true;
 	private boolean scaleUpIfNeeded = true;
 	private boolean doFaceDetection = true;
+	private boolean disableDiscard = false;
 	private Uri sourceImage;
 	private Bitmap bitmap;
 
@@ -112,7 +115,7 @@ public class CropImageExtrasBuilder<SELF extends CropImageExtrasBuilder<SELF>> {
 		//
 		// Optional arguments
 		//
-
+		args.putBoolean(EXTRA_DISABLE_DISCARD, disableDiscard);
 		args.putBoolean(EXTRA_SCALE, this.scale);
 		args.putBoolean(EXTRA_SCALE_UP_IF_NEEDED, this.scaleUpIfNeeded);
 		args.putBoolean(EXTRA_NO_FACE_DETECTION, !this.doFaceDetection);
@@ -171,6 +174,21 @@ public class CropImageExtrasBuilder<SELF extends CropImageExtrasBuilder<SELF>> {
 	 */
 	public SELF setDoFaceDetection(final boolean doFaceDetection) {
 		this.doFaceDetection = doFaceDetection;
+		return self();
+	}
+
+	/**
+	 * 
+	 * Disable the Done/Discard buttons on the {@link ActionBar}
+	 * 
+	 * @param disableDiscard
+	 *            default false
+	 * @return
+	 * 
+	 * @since TODO
+	 */
+	public SELF setDisableDiscard(final boolean disableDiscard) {
+		this.disableDiscard = disableDiscard;
 		return self();
 	}
 
