@@ -19,6 +19,7 @@ package com.android.camera;
 import java.io.Closeable;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
