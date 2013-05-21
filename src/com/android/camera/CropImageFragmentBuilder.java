@@ -28,7 +28,7 @@ import android.net.Uri;
  * <li>Face detection;</li>
  * </ul>
  * 
- * @since TODO
+ * @since 1.0.1
  */
 public class CropImageFragmentBuilder extends
 		CropImageExtrasBuilder<CropImageFragmentBuilder> {

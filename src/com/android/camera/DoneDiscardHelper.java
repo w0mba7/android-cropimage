@@ -31,6 +31,8 @@ import com.android.gallery.R;
  * 
  * @author pablisco
  * 
+ * @since 1.0.1
+ * 
  */
 @SuppressLint("NewApi")
 public class DoneDiscardHelper {
