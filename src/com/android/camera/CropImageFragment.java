@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.CountDownLatch;
 
-import android.app.Activity;
 import android.app.WallpaperManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -48,6 +47,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.android.camera.DoneDiscardHelper.OnDoneDiscard;
 import com.android.camera.gallery.IImage;
 import com.android.camera.gallery.IImageList;
 import com.android.gallery.R;
@@ -56,10 +56,12 @@ import com.android.gallery.R;
  * The activity can crop specific region of interest from an image.
  */
 public class CropImageFragment extends MonitoredFragment implements CropContext {
-	
+
 	private static final String TAG = "CropImage";
 
-	// These are various options can be specified in the intent.
+	/**
+	 * These are various options can be specified in the intent.
+	 */
 	private Bitmap.CompressFormat mOutputFormat = Bitmap.CompressFormat.JPEG;
 	private Uri mSaveUri = null;
 	private boolean mSetWallpaper = false;
@@ -68,14 +70,22 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 	private boolean mCircleCrop = false;
 	private final Handler mHandler = new Handler();
 
-	// These options specifiy the output image size and whether we should
-	// scale the output to fit it (or just crop it).
+	/**
+	 * These options specifiy the output image size and whether we should
+	 * scale the output to fit it (or just crop it).
+	 */
 	private int mOutputX, mOutputY;
 	private boolean mScale;
 	private boolean mScaleUp = true;
 
-	private boolean mWaitingToPick; // Whether we are wait the user to pick a face.
-	private boolean mSaving; // Whether the "save" button is already clicked.
+	/**
+	 * Whether we are wait the user to pick a face.
+	 */
+	private boolean mWaitingToPick;
+	/**
+	 *  Whether the "save" button is already clicked.
+	 */
+	private boolean mSaving;
 
 	private CropImageView mImageView;
 	private ContentResolver mContentResolver;
@@ -85,23 +95,34 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 
 	private IImageList mAllImages;
 	private IImage mImage;
-	
-	private final OnCropListener defaultCropListener = new BaseOnCropListener();
-	
+
+	private final OnCropListener mDefaultCropListener = new BaseOnCropListener();
+	private DoneDiscardHelper mDoneDiscardHelper;
+
+	private DoneDiscardHelper getDiscardHelper() {
+		if (mDoneDiscardHelper == null) {
+			mDoneDiscardHelper = new DoneDiscardHelper(getActivity());
+		}
+		return mDoneDiscardHelper;
+	}
+
 	public ContentResolver getContentResolver() {
 		if (mContentResolver == null) {
 			mContentResolver = getActivity().getContentResolver();
 		}
 		return mContentResolver;
 	}
-	
-	private OnCropListener onCropListener = defaultCropListener;
-	
+
+	private OnCropListener onCropListener = mDefaultCropListener;
+
+	private boolean mDisableDiscard;
+
 	public interface OnCropListener {
 		public void onCropFinished(Bundle results);
+
 		public void onCropCancelled();
 	}
-	
+
 	public class BaseOnCropListener implements OnCropListener {
 
 		@Override
@@ -114,35 +135,78 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 				getChildFragmentManager().popBackStack();
 			}
 		}
-		
+
 	}
-	
+
 	public void setOnCropListener(OnCropListener onCropListener) {
 		if (onCropListener == null) {
-			onCropListener = defaultCropListener;
+			onCropListener = mDefaultCropListener;
 		}
 		this.onCropListener = onCropListener;
 	}
 
+	/**
+	 * Checks if the done discard ui is needed.
+	 */
+	public boolean isDoneDiscardEnabled() {
+		return getDiscardHelper().hasActionBar() && !mDisableDiscard;
+	}
+
+	private class OnDoneDiscardWrapper implements OnDoneDiscard,
+			View.OnClickListener {
+
+		@Override
+		public void onClick(View v) {
+			switch (StaticId.from(v.getId())) {
+			case SAVE:
+				onDone();
+				break;
+			case DISCARD:
+				onDiscard();
+				break;
+			default:
+				break;
+			}
+		}
+
+		@Override
+		public void onDone() {
+			onSaveClicked();
+		}
+
+		@Override
+		public void onDiscard() {
+			onCropListener.onCropCancelled();
+		}
+
+	}
+
+	private OnDoneDiscardWrapper actionListener = new OnDoneDiscardWrapper();
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View result = inflater.inflate(R.layout.cropimage, null);
+		View result;
+		if (isDoneDiscardEnabled()) {
+			result = inflater.inflate(R.layout.cropimage, null);
+		} else {
+			result = inflater.inflate(R.layout.cropimage_buttoned, null);
+			result.findViewById(R.id.discard)
+					.setOnClickListener(actionListener);
+			result.findViewById(R.id.save).setOnClickListener(actionListener);
+		}
 		mImageView = (CropImageView) result.findViewById(R.id.image);
 		mImageView.setCropContext(this);
-		result.findViewById(R.id.discard).setOnClickListener(
-				new View.OnClickListener() {
-					public void onClick(View v) {
-						getActivity().setResult(Activity.RESULT_CANCELED);
-						onCropListener.onCropCancelled();
-					}
-				});
-		result.findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
-			public void onClick(View v) {
-				onSaveClicked();
-			}
-		});
+
 		return result;
+	}
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		if (isDoneDiscardEnabled()) {
+			setHasOptionsMenu(true);
+		}
 	}
 	
 	@Override
@@ -156,13 +220,15 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			}
 			mSaveUri = (Uri) extras.getParcelable(MediaStore.EXTRA_OUTPUT);
 			if (mSaveUri != null) {
-				String outputFormatString = extras.getString(CropContext.EXTRA_OUTPUT_FORMAT);
+				String outputFormatString = extras
+						.getString(CropContext.EXTRA_OUTPUT_FORMAT);
 				if (outputFormatString != null) {
 					mOutputFormat = Bitmap.CompressFormat
 							.valueOf(outputFormatString);
 				}
 			} else {
-				mSetWallpaper = extras.getBoolean(CropContext.EXTRA_SET_WALLPAPER);
+				mSetWallpaper = extras
+						.getBoolean(CropContext.EXTRA_SET_WALLPAPER);
 			}
 			mBitmap = (Bitmap) extras.getParcelable(EXTRA_BITMAP_DATA);
 			mAspectX = extras.getInt(EXTRA_ASPECT_X);
@@ -173,14 +239,22 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			mScaleUp = extras.getBoolean(EXTRA_SCALE_UP_IF_NEEDED, true);
 			mDoFaceDetection = extras.getBoolean(EXTRA_NO_FACE_DETECTION, true);
 			mTarget = extras.getParcelable(EXTRA_SOURCE);
+			mDisableDiscard = extras.getBoolean(EXTRA_DISABLE_DISCARD, false);
 		}
 	}
-	
+
+	/**
+	 * onResume() makes the fragment interacting with the user (based on its
+	 * containing activity being resumed).
+	 * 
+	 * @see <code><a
+	 *      href="http://developer.android.com/reference/android/app/Fragment.html#Lifecycle">Fragment lifecycle</a></code>
+	 */
 	@Override
 	public void onResume() {
 		if (mBitmap == null) {
-			mAllImages = ImageManager.makeImageList(getContentResolver(), mTarget,
-					ImageManager.SORT_ASCENDING);
+			mAllImages = ImageManager.makeImageList(getContentResolver(),
+					mTarget, ImageManager.SORT_ASCENDING);
 			mImage = mAllImages.getImageForUri(mTarget);
 			if (mImage != null) {
 				// Don't read in really large bitmaps. Use the (big) thumbnail
@@ -195,6 +269,11 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			dispatchCropCancelled();
 		} else {
 			startFaceDetection();
+		}
+
+		// enable done discard if needed
+		if (isDoneDiscardEnabled()) {
+			getDiscardHelper().setupDoneDiscard(actionListener);
 		}
 		super.onResume();
 	}
@@ -347,7 +426,7 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 	private Intent getIntent() {
 		return getActivity().getIntent();
 	}
-	
+
 	private void dispatchCropFinished(final Bundle extra) {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
@@ -365,7 +444,7 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			}
 		});
 	}
-	
+
 	private void saveOutput(Bitmap croppedImage) {
 		if (mSaveUri != null) {
 			OutputStream outputStream = null;
@@ -384,7 +463,8 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 			dispatchCropFinished(extras);
 		} else if (mSetWallpaper) {
 			try {
-				WallpaperManager.getInstance(getActivity()).setBitmap(croppedImage);
+				WallpaperManager.getInstance(getActivity()).setBitmap(
+						croppedImage);
 				dispatchCropFinished(new Bundle());
 			} catch (IOException e) {
 				Log.e(TAG, "Failed to set wallpaper.", e);
@@ -440,8 +520,20 @@ public class CropImageFragment extends MonitoredFragment implements CropContext 
 		});
 	}
 
+	/**
+	 * fragment is no longer interacting with the user either because its
+	 * activity is being paused or a fragment operation is modifying it in the
+	 * activity.
+	 * 
+	 * @see <code><a
+	 *      href="http://developer.android.com/reference/android/app/Fragment.html#Lifecycle">Fragment lifecycle</a></code>
+	 */
 	@Override
 	public void onPause() {
+		// tear down the done/discard
+		if (isDoneDiscardEnabled()) {
+			getDiscardHelper().tearDownDoneDiscard();
+		}
 		super.onPause();
 	}
 

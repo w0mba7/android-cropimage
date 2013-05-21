@@ -406,4 +406,8 @@
 
     <!-- The messsage shown on progress dialog when deleting images -->
     <string name="delete_images_message">Deleting images, please wait\u2026</string>
+    
+    <!-- Done discard labels -->
+    <string name="done">Done</string>
+    <string name="discard">Discard</string>
 </resources>
