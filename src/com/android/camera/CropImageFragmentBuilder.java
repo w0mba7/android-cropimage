@@ -16,8 +16,6 @@
 
 package com.android.camera;
 
-import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 
 /**
@@ -32,57 +30,49 @@ import android.net.Uri;
  * 
  * @since 1.0.1
  */
-public class CropImageIntentBuilder extends
-		CropImageExtrasBuilder<CropImageIntentBuilder> {
+public class CropImageFragmentBuilder extends
+		CropImageExtrasBuilder<CropImageFragmentBuilder> {
 
 	/**
-	 * Constructor.
 	 * 
-	 * @param outputX
-	 *            Output vertical size in pixels.
-	 * @param outputY
-	 *            Output horizontal size in pixels.
-	 * @param saveUri
-	 *            Output file URI.
-	 * @since 1.0.1
-	 */
-	public CropImageIntentBuilder(final int outputX, final int outputY,
-			final Uri saveUri) {
-		super(outputX, outputY, saveUri);
-	}
-
-	/**
-	 * Constructor.
+	 * Constructor
 	 * 
 	 * @param aspectX
-	 *            Horizontal aspect ratio.
 	 * @param aspectY
-	 *            Vertical aspect ratio.
 	 * @param outputX
-	 *            Output vertical size in pixels.
 	 * @param outputY
-	 *            Output horizontal size in pixels.
 	 * @param saveUri
-	 *            Output file URI.
-	 * @since 1.0.1
 	 */
-	public CropImageIntentBuilder(final int aspectX, final int aspectY,
-			final int outputX, final int outputY, final Uri saveUri) {
+	public CropImageFragmentBuilder(int aspectX, int aspectY, int outputX,
+			int outputY, Uri saveUri) {
 		super(aspectX, aspectY, outputX, outputY, saveUri);
 	}
 
 	/**
-	 * Builds the Intent.
+	 * 
+	 * Cnstructor
+	 * 
+	 * @param outputX
+	 * @param outputY
+	 * @param saveUri
+	 */
+	public CropImageFragmentBuilder(int outputX, int outputY, Uri saveUri) {
+		super(outputX, outputY, saveUri);
+	}
+	
+
+	/**
+	 * Builds the {@link CropImageFragment}
 	 * 
 	 * @param context
 	 *            The application context.
 	 * @return The newly created intent.
 	 * @since 1.0.1
 	 */
-	public Intent getIntent(final Context context) {
-		final Intent intent = new Intent(context, CropImage.class);
-		intent.putExtras(buildExtras());
-		return intent;
+	public CropImageFragment build() {
+		CropImageFragment result = new CropImageFragment();
+		result.setArguments(buildExtras());
+		return result;
 	}
 
 }

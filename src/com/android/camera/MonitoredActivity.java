@@ -16,50 +16,37 @@
 
 package com.android.camera;
 
-import android.app.Activity;
-import android.os.Bundle;
-
 import java.util.ArrayList;
 
-public class MonitoredActivity extends NoSearchActivity {
+import android.content.Context;
+import android.os.Bundle;
 
-    private final ArrayList<LifeCycleListener> mListeners =
-            new ArrayList<LifeCycleListener>();
+public class MonitoredActivity extends NoSearchActivity implements MonitoredContext {
 
-    public static interface LifeCycleListener {
-        public void onActivityCreated(MonitoredActivity activity);
-        public void onActivityDestroyed(MonitoredActivity activity);
-        public void onActivityStarted(MonitoredActivity activity);
-        public void onActivityStopped(MonitoredActivity activity);
-    }
+    private final ArrayList<MonitoredContext.LifeCycleListener> mListeners =
+            new ArrayList<MonitoredContext.LifeCycleListener>();
 
-    public static class LifeCycleAdapter implements LifeCycleListener {
-        public void onActivityCreated(MonitoredActivity activity) {
-        }
-
-        public void onActivityDestroyed(MonitoredActivity activity) {
-        }
-
-        public void onActivityStarted(MonitoredActivity activity) {
-        }
-
-        public void onActivityStopped(MonitoredActivity activity) {
-        }
-    }
-
-    public void addLifeCycleListener(LifeCycleListener listener) {
+    /* (non-Javadoc)
+	 * @see com.android.camera.MonitoredContext#addLifeCycleListener(com.android.camera.MonitoredActivity.LifeCycleListener)
+	 */
+    @Override
+	public void addLifeCycleListener(MonitoredContext.LifeCycleListener listener) {
         if (mListeners.contains(listener)) return;
         mListeners.add(listener);
     }
 
-    public void removeLifeCycleListener(LifeCycleListener listener) {
+    /* (non-Javadoc)
+	 * @see com.android.camera.MonitoredContext#removeLifeCycleListener(com.android.camera.MonitoredActivity.LifeCycleListener)
+	 */
+    @Override
+	public void removeLifeCycleListener(MonitoredContext.LifeCycleListener listener) {
         mListeners.remove(listener);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        for (LifeCycleListener listener : mListeners) {
+        for (MonitoredContext.LifeCycleListener listener : mListeners) {
             listener.onActivityCreated(this);
         }
     }
@@ -67,7 +54,7 @@ public class MonitoredActivity extends NoSearchActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        for (LifeCycleListener listener : mListeners) {
+        for (MonitoredContext.LifeCycleListener listener : mListeners) {
             listener.onActivityDestroyed(this);
         }
     }
@@ -75,7 +62,7 @@ public class MonitoredActivity extends NoSearchActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        for (LifeCycleListener listener : mListeners) {
+        for (MonitoredContext.LifeCycleListener listener : mListeners) {
             listener.onActivityStarted(this);
         }
     }
@@ -83,8 +70,14 @@ public class MonitoredActivity extends NoSearchActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        for (LifeCycleListener listener : mListeners) {
+        for (MonitoredContext.LifeCycleListener listener : mListeners) {
             listener.onActivityStopped(this);
         }
     }
+
+	@Override
+	public Context getContext() {
+		return this;
+	}
+
 }
