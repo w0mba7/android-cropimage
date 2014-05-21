@@ -16,8 +16,6 @@
 
 package com.android.camera;
 
-import com.android.camera.R;
-
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -46,7 +44,9 @@ class HighlightView {
     public static final int MOVE             = (1 << 5);
 
     public HighlightView(View ctx) {
+
         mContext = ctx;
+        mContext.setLayerType(View.LAYER_TYPE_SOFTWARE,null);
     }
 
     private void init() {

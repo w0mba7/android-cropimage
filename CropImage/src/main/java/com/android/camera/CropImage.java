@@ -16,11 +16,6 @@
 
 package com.android.camera;
 
-import com.android.camera.R;
-
-import com.android.camera.gallery.IImage;
-import com.android.camera.gallery.IImageList;
-
 import android.app.WallpaperManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -30,14 +25,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PointF;
-import android.graphics.PorterDuff;
+import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Region;
-import android.graphics.PorterDuff.Mode;
 import android.media.FaceDetector;
 import android.net.Uri;
 import android.os.Bundle;
@@ -50,6 +42,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.android.camera.gallery.IImage;
+import com.android.camera.gallery.IImageList;
 
 import java.io.File;
 import java.io.IOException;
@@ -444,6 +439,7 @@ public class CropImage extends MonitoredActivity {
             int midY = (int) midPoint.y;
 
             HighlightView hv = new HighlightView(mImageView);
+
 
             int width = mBitmap.getWidth();
             int height = mBitmap.getHeight();
