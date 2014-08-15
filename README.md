@@ -1,43 +1,36 @@
-Android CropImage
-=================
+# Android CropImage
 
-<a href="https://flattr.com/submit/auto?user_id=lvillani&url=https%3A%2F%2Fgithub.com%2Flvillani%2Fandroid-cropimage%2F" target="_blank"><img src="//api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
+<img src="https://cdn.rawgit.com/lvillani/android-cropimage/f55253d2be3e6c28a06dd8bdd1e45aa7fd0b22a1/logo.svg" align="right" width="200" height="200"/>
 
-The `CropImage` activity extracted from `Gallery.apk` in AOSP 4.0. Compatible
-with Android API Level 15 onwards.
+[![Gittip](http://img.shields.io/gittip/lvillani.svg)](https://www.gittip.com/lvillani/)
+[![License](http://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://choosealicense.com/licenses/apache-2.0/)
+
+--------------------------------------------------------------------------------
+
+The `CropImage` activity extracted from `Gallery.apk` (AOSP 4.4.4). Compatible
+with Android API Level 15 and up.
 
 
-
-
-Android Studio and Gradle
-=========================
+## Android Studio and Gradle
 
 The project was created with Android Studio and uses the Gradle build system.
 
 
+## Intent-based API
 
-
-Intent-based API
-================
-
-The `CropImage` activity is controlled by an Intent-based API. Please use the
-wrapper class [CropImageIntentBuilder](CropImage/src/main/java/com/android/camera/CropImageIntentBuilder.java)
+The `CropImage` activity is controlled by an Intent-based API. Please use the wrapper class
+[CropImageIntentBuilder](CropImage/src/main/java/com/android/camera/CropImageIntentBuilder.java)
 for a type-safe interface.
 
 
-
-
-Example Project
-===============
+## Example Project
 
 It is contained inside the `CropImageExample` module.
 
 
+## Donating
 
+Support this project and [others by Lorenzo Villani](https://github.com/lvillani/) via
+[gittip](https://www.gittip.com/lvillani/).
 
-Project Information
-===================
-
- * Home Page: https://github.com/lvillani/android-cropimage
- * Bug tracking: https://github.com/lvillani/android-cropimage/issues
-
+[![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.2.0/dist/gittip.png)](https://www.gittip.com/lvillani/)
