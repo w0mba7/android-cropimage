@@ -33,4 +33,4 @@ It is contained inside the `CropImageExample` module.
 Support this project and [others by Lorenzo Villani](https://github.com/lvillani/) via
 [gittip](https://www.gittip.com/lvillani/).
 
-[![Support via Gittip](https://rawgithub.com/twolfson/gittip-badge/0.2.0/dist/gittip.png)](https://www.gittip.com/lvillani/)
+[![Support via Gittip](https://cdn.rawgit.com/lvillani/gittip-badge/v1.0.0/dist/gittip.svg)](https://www.gittip.com/lvillani/)
