@@ -16,11 +16,6 @@
 
 package com.android.camera;
 
-import com.android.camera.R;
-
-import com.android.camera.gallery.IImage;
-import com.android.camera.gallery.IImageList;
-
 import android.app.WallpaperManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -48,6 +43,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.android.camera.gallery.IImage;
+import com.android.camera.gallery.IImageList;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -63,6 +61,7 @@ public class CropImage extends MonitoredActivity {
     // These are various options can be specified in the intent.
     private Bitmap.CompressFormat mOutputFormat =
             Bitmap.CompressFormat.JPEG; // only used with mSaveUri
+    private int mOutputQuality = 100; // only used with mSaveUri and JPEG format
     private Uri mSaveUri = null;
     private boolean mSetWallpaper = false;
     private int mAspectX, mAspectY;
@@ -126,6 +125,7 @@ public class CropImage extends MonitoredActivity {
                     mOutputFormat = Bitmap.CompressFormat.valueOf(
                             outputFormatString);
                 }
+                mOutputQuality = extras.getInt("outputQuality", 100);
             } else {
                 mSetWallpaper = extras.getBoolean("setWallpaper");
             }
@@ -336,7 +336,7 @@ public class CropImage extends MonitoredActivity {
             try {
                 outputStream = mContentResolver.openOutputStream(mSaveUri);
                 if (outputStream != null) {
-                    croppedImage.compress(mOutputFormat, 100, outputStream);
+                    croppedImage.compress(mOutputFormat, mOutputQuality, outputStream);
                 }
             } catch (IOException ex) {
                 // TODO: report error to caller
