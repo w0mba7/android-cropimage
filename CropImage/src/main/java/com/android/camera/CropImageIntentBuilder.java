@@ -47,6 +47,7 @@ public class CropImageIntentBuilder {
     private static final String EXTRA_NO_FACE_DETECTION = "noFaceDetection";
     private static final String EXTRA_CIRCLE_CROP = "circleCrop";
     private static final String EXTRA_OUTPUT_FORMAT = "outputFormat";
+    private static final String EXTRA_OUTPUT_QUALITY = "outputQuality";
 
     private static final int DEFAULT_SCALE = 1;
 
@@ -57,6 +58,7 @@ public class CropImageIntentBuilder {
     private String outputFormat = null;
     private Uri sourceImage;
     private Bitmap bitmap;
+    private int outputQuality;
 
     private final int aspectX;
     private final int aspectY;
@@ -133,6 +135,7 @@ public class CropImageIntentBuilder {
         intent.putExtra(EXTRA_NO_FACE_DETECTION, !this.doFaceDetection);
         intent.putExtra(EXTRA_CIRCLE_CROP, this.circleCrop);
         intent.putExtra(EXTRA_OUTPUT_FORMAT, this.outputFormat);
+        intent.putExtra(EXTRA_OUTPUT_QUALITY, this.outputQuality);
 
         if (this.bitmap != null) {
             intent.putExtra(EXTRA_BITMAP_DATA, this.bitmap);
@@ -143,6 +146,21 @@ public class CropImageIntentBuilder {
         }
 
         return intent;
+    }
+
+    /**
+     * Set the quality for the output file when applicable. This is used for JPEG output
+     * format for example.
+     *
+     * @param outputQuality
+     *        The quality (0 is smallest file size, 100 is best quality)
+     * @return This Builder object to allow for chaining of calls to set methods.
+     * @since 1.0.1
+     */
+    public CropImageIntentBuilder setOutputQuality(final int outputQuality) {
+        this.outputQuality = outputQuality;
+
+        return this;
     }
 
     /**
