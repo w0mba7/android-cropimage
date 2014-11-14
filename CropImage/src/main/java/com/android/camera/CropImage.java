@@ -22,16 +22,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PointF;
-import android.graphics.PorterDuff.Mode;
-import android.graphics.PorterDuffXfermode;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Region;
 import android.media.FaceDetector;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -61,6 +61,7 @@ public class CropImage extends MonitoredActivity {
     // These are various options can be specified in the intent.
     private Bitmap.CompressFormat mOutputFormat =
             Bitmap.CompressFormat.JPEG; // only used with mSaveUri
+    private int mOutputQuality = 100; // only used with mSaveUri and JPEG format
     private Uri mSaveUri = null;
     private boolean mSetWallpaper = false;
     private int mAspectX, mAspectY;
@@ -96,6 +97,17 @@ public class CropImage extends MonitoredActivity {
 
         mImageView = (CropImageView) findViewById(R.id.image);
 
+        // Work-around for devices incapable of using hardware-accelerated clipPath.
+        // (android.view.GLES20Canvas.clipPath)
+        //
+        // See also:
+        // - https://code.google.com/p/android/issues/detail?id=20474
+        // - https://github.com/lvillani/android-cropimage/issues/20
+        //
+        if (Build.VERSION.SDK_INT > 10 && Build.VERSION.SDK_INT < 16) { // >= Gingerbread && < Jelly Bean
+            mImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
+
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
 
@@ -113,6 +125,7 @@ public class CropImage extends MonitoredActivity {
                     mOutputFormat = Bitmap.CompressFormat.valueOf(
                             outputFormatString);
                 }
+                mOutputQuality = extras.getInt("outputQuality", 100);
             } else {
                 mSetWallpaper = extras.getBoolean("setWallpaper");
             }
@@ -261,34 +274,26 @@ public class CropImage extends MonitoredActivity {
                     : Bitmap.Config.RGB_565);
 
             Canvas canvas = new Canvas(croppedImage);
-
-            if (mCircleCrop) {
-                final int color = 0xffff0000;
-                final Paint paint = new Paint();
-                final Rect rect = new Rect(0, 0, croppedImage.getWidth(), croppedImage.getHeight());
-                final RectF rectF = new RectF(rect);
-
-                paint.setAntiAlias(true);
-                paint.setDither(true);
-                paint.setFilterBitmap(true);
-                canvas.drawARGB(0, 0, 0, 0);
-                paint.setColor(color);
-                canvas.drawOval(rectF, paint);
-
-                paint.setColor(Color.BLUE);
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth((float) 4);
-                paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
-                canvas.drawBitmap(mBitmap, r, rect, paint);
-            }
-            else {
-            	Rect dstRect = new Rect(0, 0, width, height);
-             	canvas.drawBitmap(mBitmap, r, dstRect, null);
-            }
+            Rect dstRect = new Rect(0, 0, width, height);
+            canvas.drawBitmap(mBitmap, r, dstRect, null);
 
             // Release bitmap memory as soon as possible
             mImageView.clear();
             mBitmap.recycle();
+
+            if (mCircleCrop) {
+                // OK, so what's all this about?
+                // Bitmaps are inherently rectangular but we want to return
+                // something that's basically a circle.  So we fill in the
+                // area around the circle with alpha.  Note the all important
+                // PortDuff.Mode.CLEAR.
+                Canvas c = new Canvas(croppedImage);
+                Path p = new Path();
+                p.addCircle(width / 2F, height / 2F, width / 2F,
+                        Path.Direction.CW);
+                c.clipPath(p, Region.Op.DIFFERENCE);
+                c.drawColor(0x00000000, PorterDuff.Mode.CLEAR);
+            }
 
             // If the required dimension is specified, scale the image.
             if (mOutputX != 0 && mOutputY != 0 && mScale) {
@@ -331,7 +336,7 @@ public class CropImage extends MonitoredActivity {
             try {
                 outputStream = mContentResolver.openOutputStream(mSaveUri);
                 if (outputStream != null) {
-                    croppedImage.compress(mOutputFormat, 100, outputStream);
+                    croppedImage.compress(mOutputFormat, mOutputQuality, outputStream);
                 }
             } catch (IOException ex) {
                 // TODO: report error to caller
@@ -439,7 +444,6 @@ public class CropImage extends MonitoredActivity {
             int midY = (int) midPoint.y;
 
             HighlightView hv = new HighlightView(mImageView);
-
 
             int width = mBitmap.getWidth();
             int height = mBitmap.getHeight();
